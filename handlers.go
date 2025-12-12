@@ -105,7 +105,7 @@ func (m *MockOIDC) Authorize(rw http.ResponseWriter, req *http.Request) {
 	session, err := m.SessionStore.NewSession(
 		req.Form.Get("scope"),
 		req.Form.Get("nonce"),
-		m.UserQueue.Pop(),
+		m.UserProvider.Get(),
 		req.Form.Get("code_challenge"),
 		req.Form.Get("code_challenge_method"),
 	)
@@ -207,13 +207,8 @@ func (m *MockOIDC) validateTokenParams(rw http.ResponseWriter, req *http.Request
 	if !equal {
 		return false
 	}
-	equal = assertEqual("client_secret", m.ClientSecret,
+	return assertEqual("client_secret", m.ClientSecret,
 		InvalidClient, "Invalid client secret", rw, req)
-	if !equal {
-		return false
-	}
-
-	return true
 }
 
 func (m *MockOIDC) validateCodeGrant(rw http.ResponseWriter, req *http.Request) (*Session, bool) {

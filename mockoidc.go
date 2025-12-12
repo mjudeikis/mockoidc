@@ -34,7 +34,7 @@ type MockOIDC struct {
 	Server       *http.Server
 	Keypair      *Keypair
 	SessionStore *SessionStore
-	UserQueue    *UserQueue
+	UserProvider UserProvider
 	ErrorQueue   *ErrorQueue
 
 	tlsConfig   *tls.Config
@@ -66,6 +66,10 @@ type ServerConfig struct {
 	TLSConfig    *tls.Config
 	Listener     net.Listener
 	AddrOverride string
+
+	// Optional UserProvider implementation. If nil, defaults to
+	// UserProviderQueue implementation will be used.
+	UserProvider UserProvider
 }
 
 // NewServer configures a new MockOIDC that isn't started. An existing
@@ -112,6 +116,11 @@ func NewServer(serverConfig *ServerConfig) (*MockOIDC, error) {
 
 	addOveride := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 
+	userProvider := serverConfig.UserProvider
+	if userProvider == nil {
+		userProvider = &UserProviderQueue{}
+	}
+
 	return &MockOIDC{
 		ClientID:                      clientID,
 		ClientSecret:                  clientSecret,
@@ -120,7 +129,7 @@ func NewServer(serverConfig *ServerConfig) (*MockOIDC, error) {
 		CodeChallengeMethodsSupported: []string{"plain", "S256"},
 		Keypair:                       keypair,
 		SessionStore:                  NewSessionStore(),
-		UserQueue:                     &UserQueue{},
+		UserProvider:                  userProvider,
 		ErrorQueue:                    &ErrorQueue{},
 		listener:                      ln,
 		AddrOverride:                  addOveride,
@@ -205,11 +214,11 @@ func (m *MockOIDC) Config() *Config {
 	}
 }
 
-// QueueUser allows adding mock User objects to the authentication queue.
+// AddUser allows adding mock User objects to the authentication user provider (default UserProviderQueue).
 // Calls to the `authorization_endpoint` will pop these mock User objects
 // off the queue and create a session with them.
-func (m *MockOIDC) QueueUser(user User) {
-	m.UserQueue.Push(user)
+func (m *MockOIDC) AddUser(user User) {
+	m.UserProvider.Set(user)
 }
 
 // QueueCode allows adding mock code strings to the authentication queue.

@@ -2,9 +2,11 @@ package mockoidc
 
 import "sync"
 
-// UserQueue manages the queue of Users returned for each
+var _ UserProvider = (*UserProviderQueue)(nil)
+
+// UserProviderQueue manages the queue of Users returned for each
 // call to the authorize endpoint
-type UserQueue struct {
+type UserProviderQueue struct {
 	sync.Mutex
 	Queue []User
 }
@@ -31,14 +33,14 @@ type ServerError struct {
 
 // Push adds a User to the Queue to be set in subsequent calls to the
 // `authorization_endpoint`
-func (q *UserQueue) Push(user User) {
+func (q *UserProviderQueue) Set(user User) {
 	q.Lock()
 	defer q.Unlock()
 	q.Queue = append(q.Queue, user)
 }
 
-// Pop a User from the Queue. If empty, return `DefaultUser()`
-func (q *UserQueue) Pop() User {
+// GetUser gets a User from the Queue. If empty, return `DefaultUser()`
+func (q *UserProviderQueue) Get() User {
 	q.Lock()
 	defer q.Unlock()
 

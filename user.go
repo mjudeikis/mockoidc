@@ -6,6 +6,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// UserProvider represents a source of Users for the MockOIDC server.
+type UserProvider interface {
+	// GetUser returns a user from the provider.
+	Get() User
+	// Set adds a User to the provider. Can be ran multiple times to add more Users
+	// if the implementation supports it.
+	Set(user User)
+}
+
 // User represents a mock user that the server will grant Oauth tokens for.
 // Calls to the `authorization_endpoint` will pop any mock Users added to the
 // `UserQueue`. Otherwise `DefaultUser()` is returned.
