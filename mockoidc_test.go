@@ -20,6 +20,7 @@ const TestNow = 1234567890
 
 // A custom client that doesn't automatically follow redirects
 var httpClient = &http.Client{
+	Timeout: 10 * time.Second,
 	CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	},

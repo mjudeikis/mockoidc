@@ -10,9 +10,6 @@ import (
 type UserProvider interface {
 	// GetUser returns a user from the provider.
 	Get() User
-	// Set adds a User to the provider. Can be ran multiple times to add more Users
-	// if the implementation supports it.
-	Set(user User)
 }
 
 // User represents a mock user that the server will grant Oauth tokens for.

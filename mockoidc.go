@@ -109,12 +109,14 @@ func NewServer(serverConfig *ServerConfig) (*MockOIDC, error) {
 		ln = serverConfig.Listener
 	}
 
-	u, err := url.Parse(serverConfig.AddrOverride)
-	if err != nil {
-		return nil, err
+	var addOveride string
+	if serverConfig.AddrOverride != "" {
+		u, err := url.Parse(serverConfig.AddrOverride)
+		if err != nil {
+			return nil, err
+		}
+		addOveride = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 	}
-
-	addOveride := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 
 	userProvider := serverConfig.UserProvider
 	if userProvider == nil {
@@ -166,6 +168,9 @@ func (m *MockOIDC) Start(ln net.Listener, cfg *tls.Config) error {
 		return errors.New("server already started")
 	}
 
+	// Store the listener so Addr() method can access it
+	m.listener = ln
+
 	handler := mux.NewRouter()
 	m.AddRoutes(handler)
 
@@ -212,13 +217,6 @@ func (m *MockOIDC) Config() *Config {
 		AccessTTL:                     m.AccessTTL,
 		RefreshTTL:                    m.RefreshTTL,
 	}
-}
-
-// AddUser allows adding mock User objects to the authentication user provider (default UserProviderQueue).
-// Calls to the `authorization_endpoint` will pop these mock User objects
-// off the queue and create a session with them.
-func (m *MockOIDC) AddUser(user User) {
-	m.UserProvider.Set(user)
 }
 
 // QueueCode allows adding mock code strings to the authentication queue.
